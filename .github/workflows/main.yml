@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04  # 关键修改：固定使用 Ubuntu 20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,11 +20,8 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt update
-          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
-          # 使用新的正确地址安装 libtinfo5
-          wget http://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo5_6.4-4_amd64.deb
-          sudo dpkg -i libtinfo5_6.4-4_amd64.deb || true
-          sudo apt-get install -f -y
+          sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          # Ubuntu 20.04 自带 libtinfo5，不需要手动下载！
 
       - name: Install Buildozer
         run: |
