@@ -21,9 +21,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev cmake libffi-dev libssl-dev
-          # 手动安装 libtinfo5 (Ubuntu 24.04 需要)
-          wget http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.4-2_amd64.deb
-          sudo dpkg -i libtinfo5_6.4-2_amd64.deb || true
+          # 使用新的正确地址安装 libtinfo5
+          wget http://archive.ubuntu.com/ubuntu/pool/main/n/ncurses/libtinfo5_6.4-4_amd64.deb
+          sudo dpkg -i libtinfo5_6.4-4_amd64.deb || true
           sudo apt-get install -f -y
 
       - name: Install Buildozer
