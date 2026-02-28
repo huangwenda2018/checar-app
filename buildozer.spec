@@ -14,7 +14,7 @@ version = 0.1
 version.release = 0.1
 
 # 依赖库 (重要！)
-requirements = python3==3.11.0, android, pyjnius, plyer
+requirements = python3==3.11.0, android, pyjnius, plyer, androidhelper
 
 # 权限
 android.permissions = READ_SMS, RECEIVE_SMS, VIBRATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE
@@ -36,3 +36,4 @@ android.minapi = 21
 android.wakelock = True
 android.ndk = 25b
 android.sdk = 33
+
