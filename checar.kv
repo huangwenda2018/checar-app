@@ -1,0 +1,93 @@
+#:kivy 2.1.0
+
+<PlateWidget@BoxLayout>:
+    plate: ''
+    active: False
+    on_active: app.root.toggle_monitor(plate, active)
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: '48dp'
+    padding: '10dp'
+    spacing: '10dp'
+    
+    Label:
+        text: root.plate
+        size_hint_x: 0.6
+        halign: 'left'
+        color: 0,0,0,1 if root.active else 0.5,0.5,0.5,1
+    
+    Switch:
+        active: root.active
+        size_hint_x: 0.2
+    
+    Button:
+        text: '❌'
+        size_hint_x: 0.2
+        background_color: 1,0.2,0.2,1 if root.active else 0.8,0.8,0.8,1
+        on_release: app.root.remove_plate(root.plate)
+
+<MainLayout>:
+    orientation: 'vertical'
+    padding: '10dp'
+    spacing: '10dp'
+    
+    BoxLayout:
+        size_hint_y: None
+        height: '40dp'
+        spacing: '5dp'
+        
+        TextInput:
+            id: new_plate_input
+            hint_text: '输入车牌号 (如 京A12345)'
+            multiline: False
+            size_hint_x: 0.7
+        
+        Button:
+            text: '添加'
+            size_hint_x: 0.3
+            background_color: 0.2,0.6,1,1
+            on_release: app.root.add_plate()
+    
+    BoxLayout:
+        size_hint_y: None
+        height: '40dp'
+        spacing: '10dp'
+        
+        Label:
+            text: '监听状态:'
+            size_hint_x: 0.4
+        
+        Label:
+            id: status_label
+            text: '● 运行中' if app.root.service_running else '○ 已停止'
+            color: 0,1,0,1 if app.root.service_running else 0.5,0.5,0.5,1
+            size_hint_x: 0.3
+        
+        Button:
+            text: '启动' if not app.root.service_running else '停止'
+            size_hint_x: 0.3
+            background_color: 0,1,0,1 if not app.root.service_running else 1,0,0,1
+            on_release: app.root.toggle_service()
+    
+    ScrollView:
+        GridLayout:
+            id: plates_grid
+            cols: 1
+            spacing: '5dp'
+            size_hint_y: None
+            height: self.minimum_height
+    
+    BoxLayout:
+        size_hint_y: None
+        height: '40dp'
+        spacing: '10dp'
+        
+        Button:
+            text: '⚙️ 设置'
+            background_color: 0.5,0.5,0.5,1
+            on_release: app.root.open_settings()
+        
+        Button:
+            text: '📋 测试提醒'
+            background_color: 0.8,0.5,0,1
+            on_release: app.root.test_alert()
