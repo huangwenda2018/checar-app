@@ -39,3 +39,4 @@ class CarAlertService(service.Service):
         except:
             pass
         super().onDestroy()
+
