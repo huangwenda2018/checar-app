@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04  # 关键修改：固定使用 Ubuntu 20.04
+    runs-on: ubuntu-22.04  # ✅ 改成 22.04，不用等，自带 libtinfo5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,7 +21,6 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y git zip unzip openjdk-17-jdk python3-pip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-          # Ubuntu 20.04 自带 libtinfo5，不需要手动下载！
 
       - name: Install Buildozer
         run: |
