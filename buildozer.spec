@@ -14,7 +14,7 @@ version = 0.1
 version.release = 0.1
 
 # 依赖库
-requirements = python3==3.11.0, kivy==2.1.0, android, pyjnius, plyer
+requirements = python3==3.11.0, kivy==2.1.0, android, pyjnius==1.6.1, plyer, cython
 
 # 权限
 android.permissions = READ_SMS, RECEIVE_SMS, VIBRATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE
@@ -44,3 +44,4 @@ android.build_tools = 34.0.0
 android.accept_sdk_license = True
 android.ndk_path = /home/runner/.buildozer/android/platform/android-ndk-r25b
 android.sdk_path = /home/runner/.buildozer/android/platform/android-sdk
+
