@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04  # ✅ 改成 22.04，不用等，自带 libtinfo5
+    runs-on: ubuntu-22.04  # 使用 22.04，自带 libtinfo5，不用等
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
