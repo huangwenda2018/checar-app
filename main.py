@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-搬车APP - 交警挪车短信监听核心 + Kivy UI
-参考挪呗UI风格，简洁易用
+搬车APP - 交警挪车短信监听核心 (无 pyjnius 版本)
 """
 import time
 import threading
@@ -9,27 +8,140 @@ import json
 import os
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.button import Button
+from kivy.uix.textinput import TextInput
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.switch import Switch
+from kivy.uix.popup import Popup
+from kivy.uix.slider import Slider
 from kivy.clock import Clock
-from kivy.properties import StringProperty, BooleanProperty, ListProperty, DictProperty
-from androidhelper import Android
+from kivy.properties import ListProperty, BooleanProperty, DictProperty
 from plyer import notification, vibrator, tts
+from androidhelper import Android
 
 droid = Android()
 
+
+class PlateWidget(BoxLayout):
+    """单个车牌显示组件"""
+    def __init__(self, plate='', active=False, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'horizontal'
+        self.size_hint_y = None
+        self.height = '48dp'
+        self.padding = '10dp'
+        self.spacing = '10dp'
+        
+        # 车牌标签
+        self.plate_label = Label(
+            text=plate,
+            size_hint_x=0.6,
+            halign='left',
+            color=(0, 0, 0, 1) if active else (0.5, 0.5, 0.5, 1)
+        )
+        self.add_widget(self.plate_label)
+        
+        # 开关
+        self.switch = Switch(active=active, size_hint_x=0.2)
+        self.add_widget(self.switch)
+        
+        # 删除按钮
+        self.delete_btn = Button(
+            text='❌',
+            size_hint_x=0.2,
+            background_color=(1, 0.2, 0.2, 1) if active else (0.8, 0.8, 0.8, 1)
+        )
+        self.add_widget(self.delete_btn)
+
+
 class MainLayout(BoxLayout):
     """主界面布局"""
-    plates = ListProperty([])  # 存储车牌列表
-    service_running = BooleanProperty(False)  # 监听服务状态
+    plates = ListProperty([])
+    service_running = BooleanProperty(False)
     config_file = "/sdcard/checar_config.json"
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.padding = '10dp'
+        self.spacing = '10dp'
+        
         self.app = App.get_running_app()
         self.load_config()
+        self.init_ui()
+    
+    def init_ui(self):
+        """初始化UI"""
+        # 添加车牌输入区域
+        input_layout = BoxLayout(size_hint_y=None, height='40dp', spacing='5dp')
+        self.plate_input = TextInput(
+            hint_text='输入车牌号 (如 京A12345)',
+            multiline=False,
+            size_hint_x=0.7
+        )
+        input_layout.add_widget(self.plate_input)
+        
+        add_btn = Button(
+            text='添加',
+            size_hint_x=0.3,
+            background_color=(0.2, 0.6, 1, 1)
+        )
+        add_btn.bind(on_release=self.add_plate)
+        input_layout.add_widget(add_btn)
+        self.add_widget(input_layout)
+        
+        # 状态控制区域
+        status_layout = BoxLayout(size_hint_y=None, height='40dp', spacing='10dp')
+        status_layout.add_widget(Label(text='监听状态:', size_hint_x=0.4))
+        
+        self.status_label = Label(
+            text='● 运行中' if self.service_running else '○ 已停止',
+            color=(0, 1, 0, 1) if self.service_running else (0.5, 0.5, 0.5, 1),
+            size_hint_x=0.3
+        )
+        status_layout.add_widget(self.status_label)
+        
+        self.toggle_btn = Button(
+            text='启动' if not self.service_running else '停止',
+            size_hint_x=0.3,
+            background_color=(0, 1, 0, 1) if not self.service_running else (1, 0, 0, 1)
+        )
+        self.toggle_btn.bind(on_release=self.toggle_service)
+        status_layout.add_widget(self.toggle_btn)
+        self.add_widget(status_layout)
+        
+        # 车牌列表滚动区域
+        scroll = ScrollView()
+        self.plates_grid = GridLayout(cols=1, spacing='5dp', size_hint_y=None)
+        self.plates_grid.bind(minimum_height=self.plates_grid.setter('height'))
+        scroll.add_widget(self.plates_grid)
+        self.add_widget(scroll)
+        
+        # 底部按钮
+        bottom_layout = BoxLayout(size_hint_y=None, height='40dp', spacing='10dp')
+        
+        settings_btn = Button(
+            text='⚙️ 设置',
+            background_color=(0.5, 0.5, 0.5, 1)
+        )
+        settings_btn.bind(on_release=self.open_settings)
+        bottom_layout.add_widget(settings_btn)
+        
+        test_btn = Button(
+            text='📋 测试提醒',
+            background_color=(0.8, 0.5, 0, 1)
+        )
+        test_btn.bind(on_release=self.test_alert)
+        bottom_layout.add_widget(test_btn)
+        self.add_widget(bottom_layout)
+        
+        # 更新车牌显示
         self.update_plates_display()
     
     def load_config(self):
-        """加载配置（车牌、设置）"""
+        """加载配置"""
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r', encoding='utf-8') as f:
@@ -37,7 +149,6 @@ class MainLayout(BoxLayout):
                     self.plates = config.get('plates', [])
                     self.app.alert_config.update(config.get('alert_config', {}))
             else:
-                # 默认测试车牌
                 self.plates = ["京A12345", "粤B88888"]
                 self.save_config()
         except Exception as e:
@@ -57,28 +168,21 @@ class MainLayout(BoxLayout):
             print(f"保存配置失败: {e}")
     
     def update_plates_display(self):
-        """更新界面显示的车牌列表"""
-        grid = self.ids.plates_grid
-        grid.clear_widgets()
+        """更新车牌列表显示"""
+        self.plates_grid.clear_widgets()
         for plate in self.plates:
-            # 从KV文件动态创建PlateWidget
-            from kivy.lang import Builder
-            widget = Builder.load_string(f'''
-PlateWidget:
-    plate: '{plate}'
-    active: {str(self.app.monitor_running).lower()}
-''')
-            grid.add_widget(widget)
+            widget = PlateWidget(plate=plate, active=self.service_running)
+            widget.delete_btn.bind(on_release=lambda btn, p=plate: self.remove_plate(p))
+            self.plates_grid.add_widget(widget)
     
-    def add_plate(self):
+    def add_plate(self, instance):
         """添加新车牌"""
-        input_field = self.ids.new_plate_input
-        new_plate = input_field.text.strip().upper()
+        new_plate = self.plate_input.text.strip().upper()
         if new_plate and new_plate not in self.plates:
             self.plates.append(new_plate)
             self.save_config()
             self.update_plates_display()
-            input_field.text = ''
+            self.plate_input.text = ''
     
     def remove_plate(self, plate):
         """删除车牌"""
@@ -87,43 +191,38 @@ PlateWidget:
             self.save_config()
             self.update_plates_display()
     
-    def toggle_monitor(self, plate, active):
-        """切换对某个车牌的监控（预留）"""
-        # 可以在服务运行状态下单独控制每个车牌
-        pass
-    
-    def toggle_service(self):
+    def toggle_service(self, instance):
         """启动/停止监听服务"""
         if not self.service_running:
-            # 启动服务
             if self.app.start_monitor(self.plates):
                 self.service_running = True
-                self.update_plates_display()
         else:
-            # 停止服务
             self.app.stop_monitor()
             self.service_running = False
-            self.update_plates_display()
-    
-    def open_settings(self):
-        """打开设置界面（简化版）"""
-        # 这里可以弹出一个Popup修改震动时长、播报次数等
-        from kivy.uix.popup import Popup
-        from kivy.uix.boxlayout import BoxLayout
-        from kivy.uix.label import Label
-        from kivy.uix.slider import Slider
-        from kivy.uix.button import Button
         
+        # 更新UI
+        self.status_label.text = '● 运行中' if self.service_running else '○ 已停止'
+        self.status_label.color = (0, 1, 0, 1) if self.service_running else (0.5, 0.5, 0.5, 1)
+        self.toggle_btn.text = '启动' if not self.service_running else '停止'
+        self.toggle_btn.background_color = (0, 1, 0, 1) if not self.service_running else (1, 0, 0, 1)
+        self.update_plates_display()
+    
+    def open_settings(self, instance):
+        """打开设置界面"""
         content = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        
+        # 震动时长
         content.add_widget(Label(text=f"震动时长: {self.app.alert_config['vibrate_time']/1000}秒"))
         vibrate_slider = Slider(min=1, max=10, value=self.app.alert_config['vibrate_time']/1000)
         content.add_widget(vibrate_slider)
         
+        # 播报次数
         content.add_widget(Label(text=f"播报次数: {self.app.alert_config['play_times']}"))
         play_slider = Slider(min=1, max=10, value=self.app.alert_config['play_times'], step=1)
         content.add_widget(play_slider)
         
-        def save_settings(instance):
+        # 保存按钮
+        def save_settings(btn):
             self.app.alert_config['vibrate_time'] = int(vibrate_slider.value * 1000)
             self.app.alert_config['play_times'] = int(play_slider.value)
             self.save_config()
@@ -134,8 +233,8 @@ PlateWidget:
         popup = Popup(title='设置', content=content, size_hint=(0.8, 0.6))
         popup.open()
     
-    def test_alert(self):
-        """测试提醒功能"""
+    def test_alert(self, instance):
+        """测试提醒"""
         if self.plates:
             self.app.test_alert(self.plates[0])
 
@@ -153,7 +252,7 @@ class CheCarApp(App):
         }
         self.monitor_thread = None
         self.last_alert_time = {}
-        self.ALERT_INTERVAL = 300  # 5分钟
+        self.ALERT_INTERVAL = 300
     
     def build(self):
         self.title = '搬车APP'
@@ -177,7 +276,7 @@ class CheCarApp(App):
         print("监听服务已停止")
     
     def _monitor_sms(self):
-        """短信监听核心（原有逻辑，稍作适配）"""
+        """短信监听核心"""
         police_keywords = [
             "交警", "交管12123", "未按规定停放", "立即驶离",
             "依法予以处罚", "违停", "抄牌", "挪车", "违法停车"
@@ -234,19 +333,22 @@ class CheCarApp(App):
     
     def test_alert(self, plate):
         """测试提醒"""
-        # 震动
-        vibrator.vibrate(self.alert_config["vibrate_time"] / 1000)
-        
-        # 通知
-        notification.notify(
-            title="🚨 测试提醒",
-            message=f"这是测试提醒，监控车牌 {plate}",
-            app_name="搬车APP",
-            timeout=5
-        )
-        
-        # 语音
-        tts.speak("这是测试提醒")
+        try:
+            # 震动
+            vibrator.vibrate(self.alert_config["vibrate_time"] / 1000)
+            
+            # 通知
+            notification.notify(
+                title="🚨 测试提醒",
+                message=f"这是测试提醒，监控车牌 {plate}",
+                app_name="搬车APP",
+                timeout=5
+            )
+            
+            # 语音
+            tts.speak("这是测试提醒")
+        except Exception as e:
+            print(f"测试提醒失败: {e}")
 
 
 if __name__ == "__main__":
