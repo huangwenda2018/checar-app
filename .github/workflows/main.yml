@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-20.04  # 使用最稳定的 Ubuntu 20.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,7 +15,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.8'  # 改用 Python 3.8，兼容性最好
 
       - name: Install system dependencies
         run: |
@@ -35,9 +35,10 @@ jobs:
         run: |
           mkdir -p ~/.android
           touch ~/.android/repositories.cfg
-          # 自动接受所有 SDK 许可证
-          echo "y" | sdkmanager --licenses > /dev/null 2>&1 || true
-          # 手动创建许可证文件（确保万无一失）
+          # 自动接受所有许可证
+          echo y | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
+          echo y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          # 手动创建许可证文件
           echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > ~/.android/android-sdk-license
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> ~/.android/android-sdk-license
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> ~/.android/android-sdk-license
