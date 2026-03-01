@@ -13,8 +13,8 @@ source.include_exts = py,png,jpg,kv,atlas,txt
 version = 0.1
 version.release = 0.1
 
-# 依赖库 (移除了 pyjnius)
-requirements = python3==3.11.0, kivy==2.1.0, android, plyer
+# 依赖库 - 完全移除 pyjnius
+requirements = python3==3.8.10, kivy==2.1.0, android, plyer
 
 # 权限
 android.permissions = READ_SMS, RECEIVE_SMS, VIBRATE, POST_NOTIFICATIONS, FOREGROUND_SERVICE
@@ -29,18 +29,18 @@ presplash.filename = banner.png
 
 # 架构
 android.arch = arm64-v8a
-android.api = 33
+android.api = 30
 android.minapi = 21
+
+# 指定稳定的 build-tools 版本
+android.build_tools = 30.0.3
 
 # 其他
 android.wakelock = True
-android.ndk = 25b
-android.sdk = 33
+android.ndk = 23b
+android.sdk = 30
 
-# 指定 build-tools 版本为稳定版
-android.build_tools = 34.0.0
-
-# 自动接受 SDK 许可证
+# 自动接受许可证
 android.accept_sdk_license = True
 
 [buildozer]
